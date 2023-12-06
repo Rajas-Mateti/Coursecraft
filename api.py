@@ -1,3 +1,4 @@
+from flask import Flask, request, jsonify
 import bs4
 from flask import Flask, request, jsonify
 from langchain import hub
@@ -20,23 +21,23 @@ from langchain.document_transformers import (
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import DocumentCompressorPipeline
 from langchain.document_transformers import LongContextReorder
-import pickle
 import random
 import os
+from flask_cors import CORS
 
-os.environ["OPENAI_API_KEY"] = "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"
+os.environ["OPENAI_API_KEY"] = "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"
 
-loader=CSVLoader(file_path="langChain-API/coursera__courses_dataset.csv")
+loader=CSVLoader(file_path="coursera__courses_dataset.csv")
 docs = loader.load()
 print(len(docs))
 
-#doc_batches = [random.sample(docs,1), random.sample(docs,1)]
+doc_batches = [random.sample(docs,1), random.sample(docs,1)]
 # Assuming you have 'docs' defined as a list of documents
-total_rows = len(docs)
-batch_size = max(total_rows // 4, 1000)  # Adjust the batch size as needed
+# total_rows = len(docs)
+# batch_size = max(total_rows // 4, 1000)  # Adjust the batch size as needed
 
-# Split 'docs' into three equal-sized batches
-doc_batches = [docs[i:i + batch_size] for i in range(0, total_rows, batch_size)]
+# # Split 'docs' into three equal-sized batches
+# doc_batches = [docs[i:i + batch_size] for i in range(0, total_rows, batch_size)]
 
 for i in doc_batches:
     print(len(i))
@@ -49,7 +50,7 @@ for i, doc_batch in enumerate(doc_batches):
     print("Size of i = ", retriever_batch.__sizeof__())
     retriever_batches.append(retriever_batch)
     print("batch ", i, "trained, Sleeping for 1 min")
-    time.sleep(60)
+    #time.sleep(60)
 
 final_retriever = MergerRetriever(retrievers=retriever_batches)
 print(final_retriever.__sizeof__())
@@ -106,16 +107,27 @@ rag_chain = (
     | llm
     | StrOutputParser()
 )
-ans = rag_chain.invoke("Give course syllabus for music and Machine learning?")
-print(ans)
-# @app.route('/createcoursework', methods=['POST'])
-# def ask_question():
-#     data = request.json
-#     context = retriever | format_docs
-#     question = data.get('question', '')
-#     result = rag_chain.invoke({"context": context, "question": question})
-#     return jsonify({"answer": result})
 
-# if __name__ == '__main__':
-#     app.run(debug=True)
-#     print("App Running.....")
+app = Flask(__name__)
+CORS(app)
+
+# A simple POST route that accepts a JSON object and returns a response
+@app.route('/coursecraft/create', methods=['POST'])
+def process_prompt():
+    # Extract JSON data from the request
+    data = request.get_json()
+
+    # Check if the data contains the 'prompt' key
+    if not data or 'prompt' not in data:
+        return jsonify({'error': 'No prompt provided'}), 400
+
+    # Process the prompt (for example, just echo it back)
+    print('Working on Prompt = ', data['prompt'])
+    ans = rag_chain.invoke(data['prompt'])
+    response = {
+        'message': f"{ans}"
+    }
+    return jsonify(response)
+
+if __name__ == '__main__':
+    app.run(debug=True)
