@@ -25,7 +25,7 @@ import random
 import os
 from flask_cors import CORS
 
-os.environ["OPENAI_API_KEY"] = "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"
+os.environ["OPENAI_API_KEY"] = "ADD_API_KEY"
 
 loader=CSVLoader(file_path="coursera__courses_dataset.csv")
 docs = loader.load()
